@@ -16,7 +16,7 @@ class MongoPipeline:
             "mongo_uri",
             os.getenv(
                 "MONGODB_URI",
-                "mongodb+srv://nguyenxuanbac28092005_db_user:zFZRzSH61TZ0kSxT@cluster0.ceq4y3n.mongodb.net/?appName=Cluster0",
+                os.getenv("MONGODB_URI", "mongodb://localhost:27017/"),
             ),
         )
         self.mongo_db = getattr(

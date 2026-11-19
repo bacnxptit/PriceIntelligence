@@ -1,3 +1,4 @@
+import os
 import logging
 
 import pymongo
@@ -9,7 +10,7 @@ class ViettelstorePipeline:
 
     def open_spider(self, spider):
         self.client = pymongo.MongoClient(
-            "mongodb+srv://nguyenxuanbac28092005_db_user:zFZRzSH61TZ0kSxT@cluster0.ceq4y3n.mongodb.net/?appName=Cluster0"
+            os.getenv("MONGODB_URI", "mongodb://localhost:27017/")
         )
         self.db = self.client["imdb"]
 
