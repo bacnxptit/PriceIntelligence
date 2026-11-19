@@ -32,15 +32,15 @@ jobs:
         run: |
           cd "Code/priceintelli-crawler"
           echo "Starting crawling 8 stores..."
-          scrapy crawl apple_vn
-          scrapy crawl fptshop
-          scrapy crawl thegioididong
-          scrapy crawl topzone
-          scrapy crawl cellphones
-          scrapy crawl hoanghamobile
-          scrapy crawl viettelstore
-          scrapy crawl mobilecity
-          echo "All 8 spiders finished crawling!"
+          scrapy crawl apple_vn || echo "Spider apple_vn exited with warning/error, continuing..."
+          scrapy crawl fptshop || echo "Spider fptshop exited with warning/error, continuing..."
+          scrapy crawl thegioididong || echo "Spider thegioididong exited with warning/error, continuing..."
+          scrapy crawl topzone || echo "Spider topzone exited with warning/error, continuing..."
+          scrapy crawl cellphones || echo "Spider cellphones exited with warning/error, continuing..."
+          scrapy crawl hoanghamobile || echo "Spider hoanghamobile exited with warning/error, continuing..."
+          scrapy crawl viettelstore || echo "Spider viettelstore exited with warning/error, continuing..."
+          scrapy crawl mobilecity || echo "Spider mobilecity exited with warning/error, continuing..."
+          echo "Finished crawling phase across all 8 stores!"
 
       - name: Run ETL Pipeline
         env:

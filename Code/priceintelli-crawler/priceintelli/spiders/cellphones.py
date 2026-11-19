@@ -15,9 +15,10 @@ class CellphonesSpider(scrapy.Spider):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         opts = Options()
-        # opts.add_argument("--headless=new")   # thử KHÔNG headless trước
-        opts.add_argument("--disable-gpu")
+        opts.add_argument("--headless=new")
         opts.add_argument("--no-sandbox")
+        opts.add_argument("--disable-dev-shm-usage")
+        opts.add_argument("--disable-gpu")
         opts.add_argument("--window-size=1920,1080")
         opts.add_argument(
             "user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
@@ -38,7 +39,10 @@ class CellphonesSpider(scrapy.Spider):
         url = "https://cellphones.com.vn/mobile/apple.html"
         self.logger.info(f"==> [Selenium] Mở: {url}")
         self.driver.get(url)
-        self.driver.maximize_window()
+        try:
+            self.driver.maximize_window()
+        except Exception:
+            pass
         time.sleep(3)
 
         # Vòng lặp bấm "Xem thêm"

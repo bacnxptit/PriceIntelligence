@@ -14,9 +14,10 @@ class IphoneMobilecitySpider(scrapy.Spider):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         opts = Options()
-        # opts.add_argument("--headless")
-        opts.add_argument("--disable-gpu")
+        opts.add_argument("--headless=new")
         opts.add_argument("--no-sandbox")
+        opts.add_argument("--disable-dev-shm-usage")
+        opts.add_argument("--disable-gpu")
         opts.add_argument("--window-size=1920,1080")
         opts.add_argument(
             "user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
@@ -24,7 +25,7 @@ class IphoneMobilecitySpider(scrapy.Spider):
         )
         self.driver = webdriver.Chrome(options=opts)
 
-    async def start(self):
+    def start_requests(self):
         url = "https://mobilecity.vn/dien-thoai-iphone-chinh-hang-vna"
         self.logger.info(f"==> [Selenium] Truy cập: {url}")
         self.driver.get(url)
