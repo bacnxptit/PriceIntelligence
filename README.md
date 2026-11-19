@@ -295,18 +295,5 @@ Vào GitHub Repository $\to$ **Settings** $\to$ **Secrets and variables** $\to$ 
 
 ---
 
-## 📊 8. Kết Quả Thực Nghiệm & Đo Kiểm
 
-- **Số bản ghi thô trích xuất:** 315 bản ghi từ 8 chuỗi bán lẻ.
-- **Số bản ghi sau làm sạch:** 299 bản ghi hợp lệ.
-- **Số sản phẩm duy nhất:** 257 model/dung lượng iPhone phân biệt.
-- **Khử trùng lặp:** 100% không trùng lặp (`Duplicate check count = 0`).
-- **Thời gian chạy ETL:** $\approx 30$ giây cho toàn bộ chu trình UPSERT và ghi Audit Log.
 
----
-
-## 👥 Đóng Góp & Tác Giả
-
-- **Dự án:** PriceIntelli Data Science Bootcamp
-- **Mục tiêu:** Xây dựng hệ thống thu thập & phân tích dữ liệu giá thương mại điện tử chuyên nghiệp.
-- **Bản quyền:** MIT License.
