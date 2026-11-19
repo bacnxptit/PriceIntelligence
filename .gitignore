@@ -1,0 +1,28 @@
+# Python virtual environment
+.venv/
+venv/
+ENV/
+env/
+
+# Byte-compiled / cache files
+__pycache__/
+*.py[cod]
+*$py.class
+__MACOSX/
+.DS_Store
+
+# Environments & Secret Credentials (DO NOT COMMIT!)
+.env
+**/.env
+*.env.*
+
+# SQLite databases
+*.db
+*.sqlite3
+
+# IDE
+.vscode/
+.idea/
+
+# Scrapy temporary folders
+.scrapy/
