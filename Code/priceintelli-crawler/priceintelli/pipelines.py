@@ -16,13 +16,13 @@ class MongoPipeline:
             "mongo_uri",
             os.getenv(
                 "MONGODB_URI",
-                os.getenv("MONGODB_URI", "mongodb://localhost:27017/"),
+                os.getenv("MONGO_URI", "mongodb://localhost:27017/"),
             ),
         )
         self.mongo_db = getattr(
             spider,
             "mongo_db",
-            os.getenv("MONGODB_DB", "imdb"),
+            os.getenv("MONGODB_DB", os.getenv("MONGO_DB", "imdb")),
         )
         # Dynamic collection name: e.g. iphone_fptshop or raw_prices
         default_col = getattr(spider, "collection_name", f"iphone_{spider.name}")

@@ -28,6 +28,9 @@ jobs:
       - name: Run 8 Scrapy Spiders
         env:
           MONGO_URI: ${{ secrets.MONGO_URI }}
+          MONGODB_URI: ${{ secrets.MONGO_URI }}
+          MONGODB_DB: imdb
+          MONGO_DB: imdb
           SCRAPEOPS_API_KEY: ${{ secrets.SCRAPEOPS_API_KEY }}
         run: |
           cd "Code/priceintelli-crawler"
