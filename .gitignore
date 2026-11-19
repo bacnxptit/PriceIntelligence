@@ -4,17 +4,25 @@ venv/
 ENV/
 env/
 
-# Byte-compiled / cache files
+# Byte-compiled / cache files / OS files
 __pycache__/
 *.py[cod]
 *$py.class
 __MACOSX/
 .DS_Store
+Thumbs.db
 
 # Environments & Secret Credentials (DO NOT COMMIT!)
 .env
 **/.env
 *.env.*
+
+# Binary drivers & temporary outputs
+chromedriver
+chromedriver.exe
+*.log
+debug_page.html
+debug_output.json
 
 # SQLite databases
 *.db
