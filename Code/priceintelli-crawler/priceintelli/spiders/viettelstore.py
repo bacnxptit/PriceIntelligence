@@ -13,11 +13,14 @@ class IphoneViettelstoreSpider(scrapy.Spider):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.driver = None
         opts = Options()
         opts.add_argument("--headless=new")
         opts.add_argument("--no-sandbox")
         opts.add_argument("--disable-dev-shm-usage")
         opts.add_argument("--disable-gpu")
+        opts.add_argument("--disable-software-rasterizer")
+        opts.add_argument("--disable-extensions")
         opts.add_argument("--window-size=1920,1080")
         opts.add_argument(
             "user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
@@ -27,9 +30,17 @@ class IphoneViettelstoreSpider(scrapy.Spider):
         opts.add_experimental_option("excludeSwitches", ["enable-automation"])
         opts.add_experimental_option("useAutomationExtension", False)
 
-        self.driver = webdriver.Chrome(options=opts)
+        try:
+            self.driver = webdriver.Chrome(options=opts)
+        except Exception as exc:
+            self.logger.error(f"Khởi tạo Chrome Driver thất bại: {exc}")
+            self.driver = None
 
     def start_requests(self):
+        if not self.driver:
+            self.logger.error("Driver chưa khởi tạo được, dừng spider viettelstore an toàn.")
+            return
+
         url = "https://www.viettelstore.vn/dtdd-apple-iphone"
         self.logger.info(f"==> [Selenium] Mở: {url}")
         self.driver.get(url)
@@ -87,5 +98,9 @@ class IphoneViettelstoreSpider(scrapy.Spider):
             }
 
     def closed(self, reason):
-        self.driver.quit()
-        self.logger.info("==> Đã đóng Selenium Driver.")
+        if self.driver:
+            try:
+                self.driver.quit()
+            except Exception:
+                pass
+            self.logger.info("==> Đã đóng Selenium Driver.")

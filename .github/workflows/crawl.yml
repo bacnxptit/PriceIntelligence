@@ -25,6 +25,11 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
+      - name: Verify Chrome Environment
+        run: |
+          echo "Checking Chrome installation on runner:"
+          google-chrome --version || chromium-browser --version || true
+
       - name: Run 8 Scrapy Spiders
         env:
           MONGO_URI: ${{ secrets.MONGO_URI }}
