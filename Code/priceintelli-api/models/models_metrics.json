@@ -1,0 +1,80 @@
+{
+  "XGBoost": {
+    "model_name": "XGBoost",
+    "r2_score": 0.8624,
+    "mae": 4229494.0,
+    "rmse": 6493075.0,
+    "mape": 14.66,
+    "train_time": 0.161,
+    "features": [
+      "generation",
+      "capacity_gb",
+      "is_pro",
+      "is_promax",
+      "is_plus",
+      "rating",
+      "reviews"
+    ],
+    "feature_importances": {
+      "generation": 0.1032,
+      "capacity_gb": 0.8125,
+      "is_pro": 0.0593,
+      "is_promax": 0.0069,
+      "is_plus": 0.0097,
+      "rating": 0.0075,
+      "reviews": 0.0009
+    }
+  },
+  "Random Forest": {
+    "model_name": "Random Forest",
+    "r2_score": 0.8493,
+    "mae": 4537526.0,
+    "rmse": 6795010.0,
+    "mape": 15.37,
+    "train_time": 0.074,
+    "features": [
+      "generation",
+      "capacity_gb",
+      "is_pro",
+      "is_promax",
+      "is_plus",
+      "rating",
+      "reviews"
+    ],
+    "feature_importances": {
+      "generation": 0.1077,
+      "capacity_gb": 0.806,
+      "is_pro": 0.0604,
+      "is_promax": 0.0053,
+      "is_plus": 0.0085,
+      "rating": 0.0096,
+      "reviews": 0.0025
+    }
+  },
+  "Linear Regression": {
+    "model_name": "Linear Regression",
+    "r2_score": 0.0225,
+    "mae": 13925119.0,
+    "rmse": 17307275.0,
+    "mape": 47.61,
+    "train_time": 0.012,
+    "features": [
+      "generation",
+      "capacity_gb",
+      "is_pro",
+      "is_promax",
+      "is_plus",
+      "rating",
+      "reviews"
+    ],
+    "feature_importances": {
+      "generation": 0.0078,
+      "capacity_gb": 0.0,
+      "is_pro": 0.4478,
+      "is_promax": 0.198,
+      "is_plus": 0.3005,
+      "rating": 0.0301,
+      "reviews": 0.0158
+    }
+  }
+}

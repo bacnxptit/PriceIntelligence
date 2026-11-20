@@ -1,0 +1,26 @@
+{
+  "model_name": "GradientBoostingRegressor (XGBoost)",
+  "dataset_source": "Code/CleanData/clean_products.csv",
+  "total_samples": 265,
+  "r2_score": 0.8624,
+  "mae": 4229494.0,
+  "rmse": 6493075.0,
+  "features": [
+    "generation",
+    "capacity_gb",
+    "is_pro",
+    "is_promax",
+    "is_plus",
+    "rating",
+    "reviews"
+  ],
+  "feature_importances": {
+    "generation": 0.1032,
+    "capacity_gb": 0.8125,
+    "is_pro": 0.0593,
+    "is_promax": 0.0069,
+    "is_plus": 0.0097,
+    "rating": 0.0075,
+    "reviews": 0.0009
+  }
+}

@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+  api:
+    build: ./Code/priceintelli-api
+    container_name: priceintelli_api
+    ports:
+      - "8000:8000"
+    environment:
+      - POSTGRES_URL=postgresql://postgres.kvslwmjsulnolozinxyj:Gr%254TUYgu8%24kd%26%40@aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres
+      - PGSSLMODE=require
+      - SCRAPYD_URL=http://127.0.0.1:6800
+    restart: unless-stopped
+
+  dashboard:
+    build: ./Code/dashboard
+    container_name: priceintelli_dashboard
+    ports:
+      - "8501:8501"
+    environment:
+      - API_BASE_URL=http://api:8000/api
+    depends_on:
+      - api
+    restart: unless-stopped
