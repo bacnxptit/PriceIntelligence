@@ -13,8 +13,8 @@ from pymongo import MongoClient
 # Load environment variables
 load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
 
-MONGO_URI = os.getenv("MONGODB_URI")
-MONGO_DB_NAME = os.getenv("MONGODB_DB", "imdb")
+MONGO_URI = os.getenv("MONGODB_URI") or os.getenv("MONGO_URI")
+MONGO_DB_NAME = os.getenv("MONGODB_DB") or os.getenv("MONGO_DB") or "imdb"
 POSTGRES_URL = (
     os.getenv("SUPABASE_DB_URL")
     or os.getenv("POSTGRES_URL")

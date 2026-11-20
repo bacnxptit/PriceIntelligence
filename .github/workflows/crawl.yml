@@ -53,6 +53,9 @@ jobs:
       - name: Run ETL Pipeline
         env:
           MONGO_URI: ${{ secrets.MONGO_URI }}
+          MONGODB_URI: ${{ secrets.MONGO_URI }}
+          MONGODB_DB: imdb
+          MONGO_DB: imdb
           POSTGRES_URL: ${{ secrets.POSTGRES_URL }}
           SUPABASE_DB_URL: ${{ secrets.POSTGRES_URL }}
           PGSSLMODE: require

@@ -11,18 +11,17 @@ except ImportError:
 
 class MongoPipeline:
     def open_spider(self, spider):
-        self.mongo_uri = getattr(
-            spider,
-            "mongo_uri",
-            os.getenv(
-                "MONGODB_URI",
-                os.getenv("MONGO_URI", "mongodb://localhost:27017/"),
-            ),
+        self.mongo_uri = (
+            getattr(spider, "mongo_uri", None)
+            or os.getenv("MONGODB_URI")
+            or os.getenv("MONGO_URI")
+            or "mongodb://localhost:27017/"
         )
-        self.mongo_db = getattr(
-            spider,
-            "mongo_db",
-            os.getenv("MONGODB_DB", os.getenv("MONGO_DB", "imdb")),
+        self.mongo_db = (
+            getattr(spider, "mongo_db", None)
+            or os.getenv("MONGODB_DB")
+            or os.getenv("MONGO_DB")
+            or "imdb"
         )
         # Dynamic collection name: e.g. iphone_fptshop or raw_prices
         default_col = getattr(spider, "collection_name", f"iphone_{spider.name}")

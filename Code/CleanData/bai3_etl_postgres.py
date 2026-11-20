@@ -117,9 +117,9 @@ def _rows_for_load(df: pd.DataFrame) -> list[tuple[Any, ...]]:
 def main() -> None:
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
-    mongo_uri = os.getenv("MONGODB_URI")
+    mongo_uri = os.getenv("MONGODB_URI") or os.getenv("MONGO_URI")
     if not mongo_uri:
-        raise SystemExit("Thieu bien moi truong MONGODB_URI.")
+        raise SystemExit("Thieu bien moi truong MONGODB_URI hoac MONGO_URI.")
 
     postgres_url = (
         os.getenv("SUPABASE_DB_URL")

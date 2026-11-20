@@ -15,8 +15,12 @@ from pymongo import MongoClient
 # ============================================================
 load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
 
-MONGO_URI = os.getenv("MONGODB_URI")
-MONGO_DB = os.getenv("MONGODB_DB", "imdb")
+MONGO_URI = (
+    os.getenv("MONGODB_URI")
+    or os.getenv("MONGO_URI")
+    or os.getenv("DATABASE_URL_MONGO")
+)
+MONGO_DB = os.getenv("MONGODB_DB") or os.getenv("MONGO_DB") or "imdb"
 MONGO_COLLECTION = os.getenv("MONGO_COLLECTION", "all")
 
 PG_URL = (
@@ -49,7 +53,16 @@ def get_pg_connection_url() -> str:
 # EXTRACT
 # ============================================================
 def extract(since_hours: int = None) -> pd.DataFrame:
-    client = MongoClient(MONGO_URI, serverSelectionTimeoutMS=10000)
+    if not MONGO_URI:
+        raise ValueError(
+            "Khong tim thay cau hinh MONGODB_URI hoac MONGO_URI! "
+            "Vui long kiem tra GitHub Secrets hoac file .env."
+        )
+
+    masked_uri = re.sub(r":([^@]+)@", ":****@", MONGO_URI)
+    print(f"[Extract] Dang ket noi toi MongoDB: {masked_uri} (Database: {MONGO_DB})")
+
+    client = MongoClient(MONGO_URI, serverSelectionTimeoutMS=15000)
     db = client[MONGO_DB]
 
     if MONGO_COLLECTION and MONGO_COLLECTION not in ("all", "*", "iphone_*"):
