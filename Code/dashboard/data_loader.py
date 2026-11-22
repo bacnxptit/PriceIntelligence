@@ -4,13 +4,63 @@ import json
 import joblib
 import numpy as np
 import pandas as pd
+from dotenv import load_dotenv
 from sklearn.model_selection import train_test_split
+
+try:
+    import psycopg
+except ImportError:
+    psycopg = None
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_ROOT = os.path.abspath(os.path.join(BASE_DIR, ".."))
+REPO_ROOT = os.path.abspath(os.path.join(PROJECT_ROOT, ".."))
 CSV_PATH = os.path.join(PROJECT_ROOT, "CleanData", "clean_products.csv")
 MODELS_DIR = os.path.join(PROJECT_ROOT, "priceintelli-api", "models")
 ALL_METRICS_PATH = os.path.join(MODELS_DIR, "models_metrics.json")
+
+# Load .env files (ưu tiên dashboard/.env -> priceintelli-etl/.env -> priceintelli-api/.env -> root/.env)
+for env_candidate in [
+    os.path.join(BASE_DIR, ".env"),
+    os.path.join(PROJECT_ROOT, "priceintelli-etl", ".env"),
+    os.path.join(PROJECT_ROOT, "priceintelli-api", ".env"),
+    os.path.join(REPO_ROOT, ".env"),
+]:
+    if os.path.exists(env_candidate):
+        load_dotenv(env_candidate, override=False)
+
+
+def _get_postgres_url() -> str | None:
+    """Lấy chuỗi kết nối PostgreSQL từ st.secrets (Streamlit Cloud) hoặc biến môi trường (.env)"""
+    url = None
+    try:
+        import streamlit as st
+        if hasattr(st, "secrets"):
+            for key in ("POSTGRES_URL", "SUPABASE_DB_URL", "DATABASE_URL"):
+                if key in st.secrets and st.secrets[key]:
+                    url = str(st.secrets[key]).strip()
+                    break
+    except Exception:
+        pass
+
+    if not url:
+        url = (
+            os.getenv("POSTGRES_URL")
+            or os.getenv("SUPABASE_DB_URL")
+            or os.getenv("DATABASE_URL")
+        )
+
+    if url and url.startswith("postgresql+psycopg://"):
+        url = "postgresql://" + url.removeprefix("postgresql+psycopg://")
+    return url
+
+
+def _parse_capacity_gb(title: str) -> int:
+    m = re.search(r"(\d+)\s*(GB|TB)", str(title), re.IGNORECASE)
+    if not m:
+        return 128
+    val, unit = int(m.group(1)), m.group(2).upper()
+    return val * 1024 if unit == "TB" else val
 
 
 def clean_model_name(title: str) -> str:
@@ -28,23 +78,74 @@ def extract_generation(title: str) -> int:
     return int(m.group(1)) if m else 0
 
 
-def load_project_dataset() -> pd.DataFrame:
-    """Đọc dữ liệu sạch thực tế từ CleanData/clean_products.csv và trích xuất đặc trưng"""
-    if not os.path.exists(CSV_PATH):
-        raise FileNotFoundError(f"Không tìm thấy file dữ liệu tại {CSV_PATH}")
+def _fetch_from_postgres() -> pd.DataFrame | None:
+    """Truy vấn snapshot giá mới nhất của từng (sản phẩm, sàn) trực tiếp từ PostgreSQL Supabase"""
+    pg_url = _get_postgres_url()
+    if not pg_url or psycopg is None:
+        return None
 
-    df = pd.read_csv(CSV_PATH)
-    
-    # Chuẩn hóa tên model & thế hệ
+    sql = """
+    SELECT DISTINCT ON (f.product_id, f.store_id)
+        p.product_name AS title,
+        s.store_name AS store,
+        f.price,
+        COALESCE(f.listed_price, f.price) AS listed_price,
+        f.crawled_at,
+        f.crawl_date::text AS crawl_date,
+        COALESCE(f.in_stock, TRUE) AS in_stock,
+        COALESCE(f.reviews, 0) AS reviews
+    FROM fact_price_snapshots f
+    JOIN dim_products p ON f.product_id = p.product_id
+    JOIN dim_stores s ON f.store_id = s.store_id
+    WHERE f.price > 0
+    ORDER BY f.product_id, f.store_id, f.crawl_date DESC, f.crawled_at DESC;
+    """
+    try:
+        with psycopg.connect(
+            pg_url,
+            prepare_threshold=None,
+            sslmode=os.getenv("PGSSLMODE", "require"),
+            connect_timeout=10,
+        ) as conn:
+            with conn.cursor() as cur:
+                cur.execute(sql)
+                rows = cur.fetchall()
+                cols = [desc[0] for desc in cur.description]
+        if not rows:
+            return None
+        df = pd.DataFrame(rows, columns=cols)
+        df["capacity_gb"] = df["title"].apply(_parse_capacity_gb)
+        df["rating"] = 5.0
+        df["url"] = ""
+        df["crawled_at"] = df["crawled_at"].astype(str)
+        return df
+    except Exception:
+        return None
+
+
+def _enrich_dataframe(df: pd.DataFrame) -> pd.DataFrame:
+    df = df.copy()
     df["clean_model"] = df["title"].apply(clean_model_name)
     df["generation"] = df["title"].apply(extract_generation)
-    
-    # Tính discount_pct nếu có listed_price
+
+    if "capacity_gb" not in df.columns:
+        df["capacity_gb"] = df["title"].apply(_parse_capacity_gb)
+    else:
+        df["capacity_gb"] = df["capacity_gb"].fillna(df["title"].apply(_parse_capacity_gb)).astype(int)
+
+    if "rating" not in df.columns:
+        df["rating"] = 5.0
+    if "reviews" not in df.columns:
+        df["reviews"] = 0
+    if "url" not in df.columns:
+        df["url"] = ""
+
     if "listed_price" in df.columns:
+        df["listed_price"] = df["listed_price"].fillna(df["price"])
         df["discount_pct"] = np.where(
-            df["listed_price"] > df["price"],
+            (df["listed_price"] > df["price"]) & (df["listed_price"] > 0),
             ((df["listed_price"] - df["price"]) / df["listed_price"]) * 100,
-            0.0
+            0.0,
         )
     else:
         df["listed_price"] = df["price"]
@@ -52,7 +153,7 @@ def load_project_dataset() -> pd.DataFrame:
 
     # Tính vị trí giá (Price Position) thực tế theo từng model
     pos_map = {}
-    for model_name, grp in df.groupby("clean_model"):
+    for _, grp in df.groupby("clean_model"):
         p_min = grp["price"].min()
         p_max = grp["price"].max()
         p_avg = grp["price"].mean()
@@ -71,8 +172,27 @@ def load_project_dataset() -> pd.DataFrame:
             else:
                 pos = "Average"
             pos_map[idx] = pos
-            
+
     df["price_position"] = pd.Series(pos_map)
+    return df
+
+
+def load_project_dataset_with_source() -> tuple[pd.DataFrame, str]:
+    """Ưu tiên đọc dữ liệu mới nhất từ PostgreSQL (Supabase), fallback sang clean_products.csv"""
+    df_pg = _fetch_from_postgres()
+    if df_pg is not None and len(df_pg) > 0:
+        return _enrich_dataframe(df_pg), "PostgreSQL (Supabase Live)"
+
+    if not os.path.exists(CSV_PATH):
+        raise FileNotFoundError(f"Không thể kết nối PostgreSQL và không tìm thấy file {CSV_PATH}")
+
+    df_csv = pd.read_csv(CSV_PATH)
+    return _enrich_dataframe(df_csv), "Local CSV (Fallback)"
+
+
+def load_project_dataset() -> pd.DataFrame:
+    """Đọc dữ liệu sạch mới nhất từ PostgreSQL Supabase (hoặc fallback CSV)"""
+    df, _ = load_project_dataset_with_source()
     return df
 
 
@@ -80,7 +200,7 @@ def compute_store_indices(df: pd.DataFrame) -> pd.DataFrame:
     """Tính chỉ số giá Index thực tế của từng sàn so với mức trung bình toàn thị trường"""
     overall_mean = df["price"].mean()
     stores = []
-    
+
     store_labels = {
         "Apple Vietnam": ("Apple Vietnam", "Premium"),
         "CellphoneS": ("CellphoneS", "Competitive"),
@@ -105,7 +225,7 @@ def compute_store_indices(df: pd.DataFrame) -> pd.DataFrame:
             "Index": round(float(idx), 1),
             "Status": f"{tier} ({'+' if idx >= 100 else ''}{idx - 100:.1f}%)"
         })
-        
+
     return pd.DataFrame(stores).sort_values("Index", ascending=True)
 
 
@@ -120,14 +240,13 @@ def load_all_models_metrics():
 def load_model_and_evaluation(df: pd.DataFrame, selected_model_name: str = "XGBoost"):
     """Load mô hình cụ thể và đánh giá trên tập test 20% dữ liệu thực tế"""
     all_metrics = load_all_models_metrics()
-    
-    # Map friendly name to key
+
     key = "XGBoost"
     if "Random Forest" in selected_model_name:
         key = "Random Forest"
     elif "Linear" in selected_model_name:
         key = "Linear Regression"
-        
+
     m_info = all_metrics.get(key, {
         "model_name": key,
         "r2_score": 0.8624,
@@ -139,7 +258,6 @@ def load_model_and_evaluation(df: pd.DataFrame, selected_model_name: str = "XGBo
         "feature_importances": {}
     })
 
-    # Prepare real features
     df_valid = df[df["price"] > 5000000].copy()
     df_valid["is_pro"] = df_valid["title"].str.contains("pro", case=False).astype(int)
     df_valid["is_promax"] = df_valid["title"].str.contains("pro max", case=False).astype(int)
@@ -159,7 +277,7 @@ def load_model_and_evaluation(df: pd.DataFrame, selected_model_name: str = "XGBo
     if os.path.exists(model_file):
         try:
             model = joblib.load(model_file)
-        except:
+        except Exception:
             pass
 
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)

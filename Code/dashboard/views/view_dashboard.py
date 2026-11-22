@@ -32,7 +32,7 @@ def render_dashboard_view(df_products):
     """, unsafe_allow_html=True)
 
     # Pipeline progress flow
-    st.markdown("""
+    st.markdown(f"""
     <div class="pi-card" style="padding: 12px 20px; margin-bottom: 20px;">
         <div style="display: flex; align-items: center; justify-content: space-around; text-align: center;">
             <div style="display: flex; align-items: center; gap: 8px;">
@@ -40,7 +40,7 @@ def render_dashboard_view(df_products):
             </div>
             <span style="color: #9CA3AF;">→</span>
             <div style="display: flex; align-items: center; gap: 8px;">
-                <span style="color: #10B981; font-weight: 700;">✓</span> <span style="font-size: 14px; font-weight: 600; color: #111827;">Clean (265 Records)</span>
+                <span style="color: #10B981; font-weight: 700;">✓</span> <span style="font-size: 14px; font-weight: 600; color: #111827;">Clean ({total_prods} Records)</span>
             </div>
             <span style="color: #9CA3AF;">→</span>
             <div style="display: flex; align-items: center; gap: 8px;">

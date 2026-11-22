@@ -10,7 +10,7 @@ from views.view_management import render_management_view
 from views.view_reports import render_reports_view
 from views.view_insights import render_insights_view
 from views.view_automation import render_automation_view
-from data_loader import load_project_dataset
+from data_loader import load_project_dataset_with_source
 from components.ai_assistant import ask_assistant
 
 st.set_page_config(
@@ -23,16 +23,16 @@ st.set_page_config(
 # Apply exact design system CSS from demo
 st.markdown(CUSTOM_CSS, unsafe_allow_html=True)
 
-# Load real dataset from project (CleanData/clean_products.csv)
-@st.cache_data
+# Tự động đồng bộ dữ liệu mới nhất từ PostgreSQL Supabase mỗi 30 phút (TTL=1800s)
+@st.cache_data(ttl=1800, show_spinner="Đang đồng bộ dữ liệu mới nhất từ PostgreSQL...")
 def get_data():
-    return load_project_dataset()
+    return load_project_dataset_with_source()
 
 try:
-    df_products = get_data()
+    df_products, data_source = get_data()
 except Exception as e:
     st.error(f"Lỗi đọc dữ liệu dự án: {e}")
-    df_products = pd.DataFrame()
+    df_products, data_source = pd.DataFrame(), "Offline"
 
 # --- SIDEBAR (THANH BAR BÊN TRÁI VỚI ICON QUẢ TÁO APPLE) ---
 with st.sidebar:
@@ -72,6 +72,21 @@ with st.sidebar:
             with st.spinner("Đang truy vấn dữ liệu dự án..."):
                 ans = ask_assistant(q_user, df_products)
                 st.write(ans)
+
+    # Trạng thái đồng bộ dữ liệu & nút làm mới thủ công
+    latest_dt = df_products["crawl_date"].max() if (not df_products.empty and "crawl_date" in df_products.columns) else "N/A"
+    badge_bg = "#ECFDF5" if "PostgreSQL" in data_source else "#FEF3C7"
+    badge_fg = "#059669" if "PostgreSQL" in data_source else "#B45309"
+    dot_icon = "🟢" if "PostgreSQL" in data_source else "🟡"
+    st.markdown(f"""
+    <div style="margin-top: 16px; padding: 10px 12px; border-radius: 10px; background: {badge_bg}; color: {badge_fg}; font-size: 12px; font-weight: 600;">
+        {dot_icon} {data_source}<br/>
+        <span style="font-weight: 400;">Ngày mới nhất: {latest_dt} ({len(df_products)} SKUs)</span>
+    </div>
+    """, unsafe_allow_html=True)
+    if st.button("🔄 Làm mới dữ liệu", use_container_width=True):
+        st.cache_data.clear()
+        st.rerun()
 
 # --- PAGE ROUTING ---
 if "Tổng quan" in selected_nav:
