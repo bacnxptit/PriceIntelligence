@@ -40,7 +40,13 @@ class IphoneViettelstoreSpider(scrapy.Spider):
         if not self.driver:
             self.logger.error("Driver chưa khởi tạo được, dừng spider viettelstore an toàn.")
             return
+        yield scrapy.Request(
+            url="data:text/html,<html></html>",
+            callback=self.parse,
+            dont_filter=True,
+        )
 
+    def parse(self, response):
         url = "https://www.viettelstore.vn/dtdd-apple-iphone"
         self.logger.info(f"==> [Selenium] Mở: {url}")
         self.driver.get(url)

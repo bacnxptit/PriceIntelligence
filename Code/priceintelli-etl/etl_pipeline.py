@@ -333,7 +333,7 @@ def run():
     print("=" * 60)
 
     try:
-        df = extract()
+        df = extract(since_hours=48)
         if len(df) == 0:
             print("Khong co du lieu moi. Bo qua.")
             log_run("success", 0, None, run_start)

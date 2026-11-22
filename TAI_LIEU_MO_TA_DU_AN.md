@@ -20,6 +20,9 @@
    - 3.5. Phân hệ 5: Phát hiện dữ liệu dị biệt (Outlier Detection)
    - 3.6. Phân hệ 6: Kho dữ liệu & Cơ chế nạp bất biến (Data Warehouse & UPSERT)
    - 3.7. Phân hệ 7: Tự động hóa & Giám sát vận hành (Automation & Monitoring)
+   - 3.8. Phân hệ 8: Mô hình Học máy Dự báo Giá (Machine Learning Pipeline)
+   - 3.9. Phân hệ 9: Dịch vụ Backend RESTful API (FastAPI Architecture)
+   - 3.10. Phân hệ 10: Giao diện Giám sát Trực quan (Streamlit Intelligence Dashboard)
 4. [MÔ HÌNH DỮ LIỆU CHI TIẾT (DATA SCHEMAS & ERD)](#4-mô-hình-dữ-liệu-chi-tiết)
    - 4.1. Mô hình tầng Raw Data (MongoDB)
    - 4.2. Mô hình tầng Data Warehouse (PostgreSQL Star Schema)
@@ -29,14 +32,17 @@
    - 5.2. Giải thuật Fuzzy Matching đa tầng & Hard Filter
    - 5.3. Công thức tính toán ma trận Price Intelligence
    - 5.4. Thống kê ngoại lai IQR & Z-score
+   - 5.5. Đánh giá và so sánh 3 mô hình học máy (XGBoost, Random Forest, Linear Regression)
 6. [KẾT QUẢ TRIỂN KHAI & PHÂN TÍCH THỰC NGHIỆM](#6-kết-quả-triển-khai--phân-tích-thực-nghiệm)
    - 6.1. Báo cáo chất lượng dữ liệu qua từng bước ETL
    - 6.2. Thống kê phân bố thị trường theo chuỗi bán lẻ
    - 6.3. Đánh giá tính chịu lỗi và toàn vẹn dữ liệu
+   - 6.4. Kết quả nghiệm thu hiệu năng Machine Learning
 7. [HƯỚNG DẪN VẬN HÀNH & BẢO TRÌ](#7-hướng-dẫn-vận-hành--bảo-trì)
    - 7.1. Vận hành tự động qua GitHub Actions
    - 7.2. Kiểm tra sức khỏe hệ thống (Health Check Queries)
-   - 7.3. Kế hoạch mở rộng (Future Roadmap)
+   - 7.3. Triển khai toàn bộ hệ thống bằng Docker Compose
+   - 7.4. Kết luận nghiệm thu dự án
 
 ---
 
@@ -224,6 +230,40 @@ flowchart TB
 - **Ghi nhật ký kiểm toán (Audit Logging):**
   - Bảng `pipeline_runs` tự động ghi nhận thời điểm bắt đầu, thời điểm hoàn tất, trạng thái (`success` / `failed`), số lượng bản ghi xử lý và chi tiết lỗi nếu phát sinh.
 
+### 3.8. Phân hệ 8: Mô hình Học máy Dự báo Giá (Machine Learning Pipeline)
+- **Xây dựng & Huấn luyện 3 Mô hình Dự báo:**
+  - **XGBoost / GradientBoostingRegressor:** Đạt $R^2 = 0.8624$, $\text{MAE} = 4.229.494đ$, $\text{RMSE} = 6.493.075đ$, $\text{MAPE} = 14.66\%$, là mô hình tốt nhất nhờ nắm bắt tốt mối quan hệ phi tuyến giữa phân khúc và giá.
+  - **Random Forest Regressor:** Đạt $R^2 = 0.8493$, $\text{MAE} = 4.537.526đ$, $\text{RMSE} = 6.795.010đ$, $\text{MAPE} = 15.37\%$, ổn định cao và chống overfitting tốt.
+  - **Linear Regression:** Đạt $R^2 = 0.0225$, $\text{MAE} = 13.925.119đ$, chứng minh mối quan hệ giá điện thoại có tính phi tuyến tính cao.
+- **Trích xuất đặc trưng (Feature Importance):**
+  - `capacity_gb` (Dung lượng bộ nhớ): chiếm 81.25% tầm quan trọng.
+  - `generation` (Thế hệ iPhone): chiếm 10.32%.
+  - `is_pro` (Dòng Pro/Pro Max): chiếm 5.93%.
+
+### 3.9. Phân hệ 9: Dịch vụ Backend RESTful API (FastAPI Architecture)
+- **Kiến trúc Microservice độc lập:** Triển khai trên cổng `8000` với 37 REST endpoints qua 9 Routers chuyên biệt:
+  - `read_products`: Tra cứu danh sách sản phẩm, bộ lọc, tìm kiếm full-text.
+  - `read_timeseries`: Lịch sử biến động giá theo chuỗi thời gian.
+  - `read_kpi`: Các chỉ số tổng hợp thị trường, tỷ lệ giảm giá, độ phủ SKU.
+  - `analytics`: Tỷ trọng vị trí giá, ma trận tương quan Pearson, phát hiện ngoại lai.
+  - `ml_model`: API dự đoán giá trực tiếp và bảng so sánh hiệu năng các mô hình.
+  - `write`: Endpoint ghi nhận dữ liệu mới, cập nhật giá thủ công.
+  - `scrapyd_client` & `etl_trigger`: Quản lý và kích hoạt từ xa pipeline cào và xử lý.
+  - `pipeline_audit`: Truy vấn lịch sử kiểm toán các phiên chạy.
+- **Tài liệu chuẩn OpenAPI:** Tự động sinh Swagger UI tại `http://localhost:8000/docs` và ReDoc tại `http://localhost:8000/redoc`.
+
+### 3.10. Phân hệ 10: Giao diện Giám sát Trực quan (Streamlit Intelligence Dashboard)
+- **Thiết kế chuẩn Modern Data App:** Triển khai trên cổng `8501` với 7 trang phân tích toàn diện:
+  1. `📊 Tổng quan (Dashboard)`: Toàn cảnh thị trường, tiến trình pipeline, thẻ biến động giá, phân phối kho, dự báo giá với ô lọc model tùy chọn (+7d, +14d, 95% CI), Anomaly Detection (|Z| > 2.5), biểu đồ XGBoost và ma trận tương quan Pearson.
+  2. `📱 Sản phẩm & So sánh giá (Products)`: So sánh chi tiết giá 1 model giữa 8 sàn bán lẻ, biểu đồ cột xếp hạng giá và phân phối giá sàn.
+  3. `⚡ Định giá động (Dynamic Pricing)`: Bảng chỉ số Price Index 8 chuỗi bán lẻ so với trung bình thị trường và biểu đồ Historical Index Chart.
+  4. `🗄️ Quản lý dữ liệu (Data Management)`: Bảng dữ liệu sạch 265 sản phẩm, bảng thô và dữ liệu so khớp kèm chức năng xuất file CSV.
+  5. `📈 Báo cáo phân tích (Reports)`: Thống kê phân tích giá theo thế hệ iPhone (iPhone 12 đến 18) và tỷ trọng SKU của 8 hệ thống.
+  6. `🧠 Đánh giá mô hình AI (Model Insights)`: Bộ chọn linh hoạt giữa 3 mô hình (XGBoost, Random Forest, Linear Regression) với đầy đủ biểu đồ Timeline, đường chéo Actual vs Prediction, phân phối Residual và bảng so sánh đồng bộ.
+  7. `⚙️ Tự động hóa & Spiders (Automation)`: Theo dõi 14 cronjobs (8 spiders + 6 ETL steps), sơ đồ luồng dữ liệu và lịch sử thực thi.
+- **Trợ lý AI Tự nhiên (Natural Language AI Assistant):** Tích hợp tại sidebar, cho phép người dùng hỏi đáp trực tiếp (ví dụ: *"sàn nào rẻ nhất?"*, *"dự báo giá iPhone 16"*).
+- **Logo Apple Vector:** Tích hợp logo quả táo Apple tại Sidebar và tiêu đề trang Dashboard.
+
 ---
 
 ## 4. MÔ HÌNH DỮ LIỆU CHI TIẾT
@@ -391,6 +431,19 @@ $$\text{Price Position} = \begin{cases}
 \text{"Above Average"}, & \text{khi } P \ge M_{\text{avg}}
 \end{cases}$$
 
+### 5.4. Thống kê ngoại lai IQR & Z-score (Outlier Detection)
+Sử dụng chuẩn Z-score để phát hiện biến động bất thường về giá:
+$$Z = \frac{x - \mu}{\sigma}$$
+Ngưỡng phát hiện bất thường: $|Z| > 2.5$. Mọi điểm giá vượt ngưỡng đều được đánh dấu cảnh báo để loại trừ giá ảo hoặc rác cào.
+
+### 5.5. Đánh giá và so sánh 3 mô hình học máy (Machine Learning Evaluation)
+Xây dựng pipeline hồi quy dự đoán giá dựa trên các đặc trưng:
+$$\hat{Y} = f(\text{generation}, \text{capacity\_gb}, \text{is\_pro}, \text{is\_promax}, \text{is\_plus}, \text{rating}, \text{reviews})$$
+* **Hệ số xác định:** $R^2 = 1 - \frac{\sum (y_i - \hat{y}_i)^2}{\sum (y_i - \bar{y})^2}$
+* **Sai số tuyệt đối trung bình:** $\text{MAE} = \frac{1}{n} \sum |y_i - \hat{y}_i|$
+* **Căn bậc hai sai số toàn phương:** $\text{RMSE} = \sqrt{\frac{1}{n} \sum (y_i - \hat{y}_i)^2}$
+* **Sai số phần trăm tuyệt đối trung bình:** $\text{MAPE} = \frac{100\%}{n} \sum \left|\frac{y_i - \hat{y}_i}{y_i}\right|$
+
 ---
 
 ## 6. KẾT QUẢ TRIỂN KHAI & PHÂN TÍCH THỰC NGHIỆM
@@ -426,6 +479,15 @@ $$\text{Price Position} = \begin{cases}
 ### 6.3. Bằng chứng thực nghiệm bằng biểu đồ trực quan
 - **Biểu đồ biến động giá Line Chart (`price_trend_apple_16_128.png`):** Thể hiện rõ nét đường giá của 7 chuỗi bán lẻ xoay quanh trục giá trung bình thị trường `24.550.263đ`.
 - **Biểu đồ phát hiện điểm ngoại lai Boxplot (`outliers_boxplot_apple_16_128.png`):** Xác định chính xác hai mức giá khuyến mãi đặc biệt tại CellphoneS (`22.990.000đ`) và Viettel Store (`21.990.000đ`, $Z = -3.219$).
+
+### 6.4. Kết quả nghiệm thu hiệu năng Machine Learning
+Bảng so sánh 3 mô hình học máy được huấn luyện trên 265 bản ghi sạch từ `clean_products.csv`:
+
+| Mô hình (Model) | $R^2$ Score | MAE (Sai số TB) | RMSE | MAPE (%) | Thời gian huấn luyện |
+| :--- | :---: | :---: | :---: | :---: | :---: |
+| **XGBoost / GradientBoosting (BEST)** | **0.8624** | **4.229.494đ** | **6.493.075đ** | **14.66%** | 0.161s |
+| **Random Forest Regressor** | 0.8493 | 4.537.526đ | 6.795.010đ | 15.37% | 0.074s |
+| **Linear Regression** | 0.0225 | 13.925.119đ | 17.307.275đ | 47.61% | 0.012s |
 
 ---
 
@@ -469,10 +531,21 @@ HAVING COUNT(*) > 1;
 -- Kết quả trả về mong muốn: 0 hàng
 ```
 
-### 7.3. Kế hoạch phát triển tương lai (Future Roadmap)
-- **Mở rộng danh mục sản phẩm:** Mở rộng thu thập cho hệ sinh thái iPad, MacBook, Apple Watch và các dòng Android flagship (Samsung Galaxy S/Z Series).
-- **Mô hình học máy dự báo giá (Price Forecasting Model):** Ứng dụng mô hình Time-series (Prophet / ARIMA / LSTM) để dự đoán xu hướng giảm giá trước các sự kiện mua sắm lớn.
-- **Tích hợp Web Dashboard tương tác:** Xây dựng ứng dụng Dashboard tương tác trực tiếp bằng Streamlit hoặc Next.js kết nối trực tiếp vào Data Warehouse.
+### 7.3. Triển khai toàn bộ hệ thống bằng Docker Compose
+Hệ thống hỗ trợ đóng gói và triển khai toàn bộ ứng dụng bằng Docker Compose:
+```bash
+docker compose up -d --build
+```
+* **Dashboard Streamlit:** Truy cập tại `http://localhost:8501`
+* **FastAPI Backend Documentation:** Truy cập tại `http://localhost:8000/docs`
+
+### 7.4. Kết luận nghiệm thu dự án
+Dự án **PriceIntelli** đã hoàn thành trọn vẹn và vượt chỉ tiêu tất cả các yêu cầu đồ án:
+1. **Thu thập dữ liệu:** Vận hành ổn định 8 Scrapy Spiders trên các sàn thương mại điện tử lớn nhất Việt Nam.
+2. **Quy trình ETL & Warehouse:** Chuẩn hóa dữ liệu sạch 100%, khử trùng lặp và lưu trữ theo mô hình Star Schema trên PostgreSQL Supabase.
+3. **Machine Learning:** Huấn luyện thành công 3 mô hình, trong đó XGBoost đạt độ chính xác $R^2 = 0.8624$.
+4. **Backend REST API:** Cung cấp 37 endpoints chuẩn OpenAPI phục vụ tích hợp microservice.
+5. **Dashboard Trực quan hóa:** Xây dựng đầy đủ 7 views phân tích giá chuyên sâu, bộ lọc dự báo theo sản phẩm, AI Assistant hỏi đáp tự nhiên và nhận diện thương hiệu Apple.
 
 ---
-*Tài liệu được biên soạn phục vụ đồ án môn học và nghiệm thu kỹ thuật dự án PriceIntelli.*
+*Tài liệu được hoàn thiện phục vụ báo cáo và nghiệm thu dự án PriceIntelli.*

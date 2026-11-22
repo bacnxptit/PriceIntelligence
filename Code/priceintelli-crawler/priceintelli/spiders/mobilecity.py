@@ -41,7 +41,13 @@ class IphoneMobilecitySpider(scrapy.Spider):
         if not self.driver:
             self.logger.error("Driver chưa khởi tạo được, dừng spider mobilecity an toàn.")
             return
+        yield scrapy.Request(
+            url="data:text/html,<html></html>",
+            callback=self.parse,
+            dont_filter=True,
+        )
 
+    def parse(self, response):
         url = "https://mobilecity.vn/dien-thoai-iphone-chinh-hang-vna"
         self.logger.info(f"==> [Selenium] Truy cập: {url}")
         self.driver.get(url)

@@ -46,7 +46,13 @@ class CellphonesSpider(scrapy.Spider):
         if not self.driver:
             self.logger.error("Driver chưa khởi tạo được, dừng spider cellphones an toàn.")
             return
+        yield scrapy.Request(
+            url="data:text/html,<html></html>",
+            callback=self.parse,
+            dont_filter=True,
+        )
 
+    def parse(self, response):
         url = "https://cellphones.com.vn/mobile/apple.html"
         self.logger.info(f"==> [Selenium] Mở: {url}")
         self.driver.get(url)

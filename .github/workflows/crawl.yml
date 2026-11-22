@@ -2,7 +2,7 @@ name: Daily Crawl and ETL
 
 on:
   schedule:
-    - cron: '0 2 * * *' # 02:00 UTC hàng ngày (tương đương 09:00 sáng giờ Việt Nam)
+    - cron: '0 19 * * *' # 19:00 UTC hàng ngày (tương đương 02:00 sáng giờ Việt Nam UTC+7)
   workflow_dispatch: # Cho phép bấm nút "Run workflow" thủ công bất kỳ lúc nào trên GitHub
 
 jobs:
